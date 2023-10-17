@@ -10,6 +10,8 @@ def generate_sql_query(messages):
       api_key=key,
       model='gpt-4',
       messages = messages,
-      max_tokens=1024
+      max_tokens=2048
     )
-    return response
+    messages = response["choices"][0]["message"]
+    sql_query = response["choices"][0]["message"]["content"].split('```')[1][4:]
+    return sql_query, messages

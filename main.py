@@ -6,35 +6,47 @@ from cache import store_data
 
 def main():
     connection, tunnel = connect_to_db()
+
     schema_info = fetch_schema_information(connection)
-    
+    schema_msg = ""
+    for table in schema_info:
+        schema_msg += f"Table {table} has attributes: {schema_info[table]}\n"
+
     user_input = input("Please describe the query you want to execute: ")
-    messages = [{"role": "system", "content": "Act as a database expert and generate the SQL queries. \
-                 The user may specify constraints on what is allowed in the SQL query. \
-                 Provide only the query using professional modern database retrieval methods. \
-                 Do not provide ```sql``` around the response, do not apologize for incorrect responses, simply ONLY respond with SQL that can be pasted into psql. Only include the raw SQL as text and nothing else as I will feed this directly to PSQL."}, 
-                 {"role": "user", "content": f"Given the database schema {schema_info}, \
-                  convert the user request '{user_input}' into an SQL query. \Provide only the SQL query."}]
+    messages = [{"role": "system", "content": "Act as database expert and generate SQL queries. \
+                 Only access attributes on the tables as they are given in the schema. \
+                 User may specify constraints on what is allowed in SQL query. \
+                 Place the sql inside of ```sql``` code cell."}, 
+                 {"role": "user", "content": f"Given the database schema\n {schema_msg}\n\n \
+                  Convert this request: '{user_input}'"}]
 
     retry_count = 0
-    MAX_RETRIES = 3
-    while retry_count < MAX_RETRIES:
-        gpt_response = generate_sql_query(messages)
-        sql_query = gpt_response["choices"][0]["message"]["content"]
+    MAX_RETRIES = 0
+    while retry_count < MAX_RETRIES+1:
+        for message in messages:
+            print(f"{message['role']}: {message['content']}\n\n")
+        print("-"*27)
+        sql_query, message = generate_sql_query(messages)
+        messages.append(message)
         print(sql_query)
-
         cursor = connection.cursor()
         try:
             cursor.execute(sql_query)
             results = cursor.fetchall()
+            if not results:
+                try_again = input("No results found. Try again? (y/n): ")
+                if try_again == "y":
+                    retry_count += 1
+                    messages.append({"role": "user", "content": "No results were found, however, there should be results. \
+                        Please try again with a different approach following the constraints if there are any."})
+                    continue
+                else:
+                    exit()
             break
         except Exception as e:
             retry_count += 1
             print(f"Retry {retry_count}: Error on executing query: {e}")
-            messages.append({"role": "system", "content": sql_query})
             messages.append({"role": "user", "content": f"Error executing query: {e}"})
-            gpt_response = generate_sql_query(messages)
-            sql_query = gpt_response["choices"][0]["message"]["content"]
         finally:
             cursor.close()
 

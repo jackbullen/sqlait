@@ -58,7 +58,7 @@ def fetch_schema_information(connection):
     
     cursor.close()
 
-    return schema_info
+    return schema_info['tables']
 
 def execute_query(connection, query):
     cursor = connection.cursor()
@@ -73,7 +73,6 @@ def execute_query(connection, query):
         cursor.close()
 
     return results
-
 
 def close_tunnel(tunnel):
     tunnel.stop()
