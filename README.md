@@ -1,6 +1,6 @@
 # SQLait
 
-Retrive DBMS schema over SSH and generate queries with GPT.
+Retrieve DBMS schema over SSH and generate queries with GPT.
 
 ## Usage
 
@@ -11,8 +11,3 @@ Retrive DBMS schema over SSH and generate queries with GPT.
 3. Setup env variables. Requires SSH (host, port, username, password), PostgreSQL database (db name, port, hostname, user, password), and OpenAI API key
 
 4. Run `main.py`
-
-## TODO
-
-- Make the prompts more cost effective
-- Parse the response for code cell rather than the current solution...
